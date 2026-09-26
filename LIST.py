@@ -1,6 +1,8 @@
 #---------1. Класс Fighter — добавил аннотации типов---------------
-#Было:  def __init__(self, name, hp, attack):
-#Стало: def __init__(self, name: str, hp: int, attack: int):
+#Было:  
+def __init__(self, name, hp, attack):
+#Стало: 
+def __init__(self, name: str, hp: int, attack: int):
 
 #-2. create_fighter() — добавил цикл, проверку, константы, sleep---
 #Было:
