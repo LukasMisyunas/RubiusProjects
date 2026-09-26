@@ -7,16 +7,20 @@ class Fighter:
         self.hp = hp
         self.attack = attack
 
-    @property
     def is_alive(self):
         return self.hp > 0
 
 
-def create_fighter():
+def create_fighter(number):
     while True:
+        print(f"Создание бойца {number}:")
         name = input("Введите имя бойца: ")
-        hp = int(input("HP: "))
-        attack = int(input("Сила удара: "))
+        try:
+            hp = int(input("HP: "))
+            attack = int(input("Сила удара: "))
+        except ValueError:
+            print("Нужно вводить числа!\n")
+            continue
 
         if 0 < hp <= 50 and 0 < attack <= 8:
             return Fighter(name, hp, attack)
@@ -26,7 +30,7 @@ def create_fighter():
         print("Попробуйте еще раз...\n")
 
 
-def show_players(players: list):
+def show_players(players):
     if not players:
         print("Нет живых бойцов...")
         return
@@ -37,41 +41,39 @@ def show_players(players: list):
         print(f"Атака: {p.attack}\n")
 
 
-def fight(a: Fighter, b: Fighter):
-    print(f"Бой начался между {a.name} и {b.name}!")
+def fight(a, b):
+    print(f"\nБой начался между {a.name} и {b.name}!")
 
-    attacker, defender = a, b
-    while a.is_alive and b.is_alive:
-        defender.hp -= attacker.attack
-        print(f"{a.name} - HP: {max(a.hp, 0)} | {b.name} - HP: {max(b.hp, 0)}")
+    first_turn = True  # True = ход "a", False = ход "b"
+
+    while a.is_alive() and b.is_alive():
+        if first_turn:
+            b.hp -= a.attack
+            print(f"{a.name} бьёт {b.name}. У {b.name} осталось {max(b.hp, 0)} HP")
+        else:
+            a.hp -= b.attack
+            print(f"{b.name} бьёт {a.name}. У {a.name} осталось {max(a.hp, 0)} HP")
+
+        first_turn = not first_turn
         time.sleep(1)
-        attacker, defender = defender, attacker
 
     print("Бой окончен!")
 
-    if not a.is_alive and not b.is_alive:
+    if not a.is_alive() and not b.is_alive():
         print("Ничья!")
     else:
-        winner = a if a.is_alive else b
+        winner = a if a.is_alive() else b
         print(f"Победитель: {winner.name}!")
 
 
-def remove_dead(players: list):
-    return [p for p in players if p.is_alive]
-
-
-players = []
-
-for i in range(2):
-    print(f"Создание бойца {i + 1}:")
-    players.append(create_fighter())
+players = [create_fighter(1), create_fighter(2)]
 
 print("\nСписок участников:")
 show_players(players)
 
 fight(players[0], players[1])
 
-players = remove_dead(players)
+players = [p for p in players if p.is_alive()]
 
 print("\nОставшиеся в живых:")
 show_players(players)
