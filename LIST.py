@@ -1,72 +1,121 @@
 import time
+import random
+
 
 class Fighter:
-    def __init__(self, name: str, hp: int, attack: int):
+    """Обычный боец. От него будем делать других."""
+
+    def __init__(self, name, hp, attack):
         self.name = name
         self.hp = hp
+        self.max_hp = hp
         self.attack = attack
 
-def create_fighter():
-    while True: #беск цикл
-        name = input("Введите имя бойца: ")
-        hp = int(input("HP: "))
-        attack = int(input("Сила удара: "))
-        
-        # Проверка корректности введенных данных
-        if hp > 50 or hp <= 0 or attack > 8 or attack <= 0:
-            print(f"Вы ввели неправильные данные! (Макс HP: 50, Мин HP: 1; Макс атака: 8, Мин атака: 1)")
-            time.sleep(0.3)
-            print(f"Попробуйте еще раз... \n")
+    def is_alive(self):
+        # Живой, если hp больше нуля
+        return self.hp > 0
+
+    def hit(self, damage):
+        # Получить урон
+        self.hp = self.hp - damage
+        if self.hp < 0:
+            self.hp = 0
+
+    def attack_enemy(self, enemy):
+        # В базовом классе не знаем, как бить — это делают наследники
+        pass
+
+    def fight(self, enemy):
+        # Бой 1 на 1
+        while self.is_alive() and enemy.is_alive():
+            self.attack_enemy(enemy)
+            if enemy.is_alive():       # мёртвый не отвечает
+                enemy.attack_enemy(self)
+
+            print(self.name, "-", self.hp, "HP  |  ", enemy.name, "-", enemy.hp, "HP")
+            time.sleep(1)
+
+        if self.hp == enemy.hp:
+            print("Ничья!")
+            return None
+        elif self.hp > enemy.hp:
+            print(self.name, "победил!")
+            return self
         else:
-            return Fighter(name, hp, attack)
+            print(enemy.name, "победил!")
+            return enemy
 
-def show_players(players: list):
-    # Если все мертвы то сообщяем
-    if not players:
-        print("Нет живых бойцов...")
-        return
-        
-    for i in range(len(players)):
-        print(f"{i+1}. {players[i].name}")
-        print(f"HP: {players[i].hp}")
-        print(f"Атака: {players[i].attack}\n")
+    def __add__(self, other):
+        # Складываем двух бойцов в одного нового
+        new_name = self.name + "+" + other.name
+        new_hp = self.hp + other.hp
+        new_attack = self.attack + other.attack
+        return Fighter(new_name, new_hp, new_attack)
 
-def fight(a: Fighter, b: Fighter):
-    print(f"Бой начался между {a.name} и {b.name}!")
-    while a.hp > 0 and b.hp > 0:
-        a.hp -= b.attack
-        b.hp -= a.attack
-        print(f"{a.name} - HP: {a.hp} | {b.name} - HP: {b.hp}")
-        time.sleep(1)
-    print("Бой окончен!")
-    if a.hp <= 0 and b.hp <= 0:
-        print("Ничья!")
-    else:
-        if a.hp > b.hp:
-            winner = a
+    def __str__(self):
+        return self.name + " [" + str(self.hp) + "/" + str(self.max_hp) + " HP]"
+
+
+# ===== Наследники =====
+
+class Warrior(Fighter):
+    """Воин — крепкий, получает меньше урона."""
+
+    def hit(self, damage):
+        # Броня: урон минус 2, но хотя бы 1
+        damage = damage - 2
+        if damage < 1:
+            damage = 1
+        self.hp = self.hp - damage
+        if self.hp < 0:
+            self.hp = 0
+
+    def attack_enemy(self, enemy):
+        print("Воин", self.name, "рубит мечом!")
+        enemy.hit(self.attack)
+
+
+class Assassin(Fighter):
+    """Ассасин — иногда бьёт в два раза сильнее."""
+
+    def attack_enemy(self, enemy):
+        if random.random() < 0.3:      # 30% шанс крита
+            damage = self.attack * 2
+            print("Ассасин", self.name, "наносит КРИТ:", damage)
         else:
-            winner = b
-        print(f"Победитель: {winner.name}!")        
+            damage = self.attack
+            print("Ассасин", self.name, "бьёт кинжалом:", damage)
+        enemy.hit(damage)
 
-def remove_dead(players: list):
-    for p in players.copy(): #безопасный цикл по копии
-        if p.hp <= 0:
-            players.remove(p)
-    return players
 
-players = []
+class Mage(Fighter):
+    """Маг — лечится, когда бьёт."""
 
-for i in range(2):
-    print(f"Создание бойца {i+1}:")
-    players.append(create_fighter())
+    def attack_enemy(self, enemy):
+        print("Маг", self.name, "кидает огненный шар:", self.attack)
+        enemy.hit(self.attack)
 
-print("\nСписок участников:")
-show_players(players)
+        # Восстанавливаем половину от своего удара
+        heal = self.attack // 2
+        self.hp = self.hp + heal
+        if self.hp > self.max_hp:
+            self.hp = self.max_hp
+        print("Маг", self.name, "лечится на", heal, "HP")
 
-fight(players[0], players[1])
 
-#Отсееваем погибших
-players = remove_dead(players)
+# ===== Проверка =====
 
-print(f"\nОставшиеся в живых:")
-show_players(players)
+warrior = Warrior("Арагорн", 120, 15)
+assassin = Assassin("Локи", 80, 20)
+mage = Mage("Гэндальф", 90, 18)
+
+print(warrior)
+print(assassin)
+print(mage)
+
+print("\n--- Бой ---")
+warrior.fight(mage)
+
+print("\n--- Сложение ---")
+fusion = warrior + assassin
+print(fusion)
